@@ -101,12 +101,21 @@ def _parse_intent_llm(question: str, provider: str) -> dict:
     elif provider == "groq":
         from groq import Groq
         client = Groq(api_key=os.environ["GROQ_API_KEY"])
-        chat = client.chat.completions.create(
-            model=os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile"),
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0,
-            seed=42,
-        )
+        groq_model = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+        try:
+            chat = client.chat.completions.create(
+                model=groq_model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0,
+                seed=42,
+            )
+        except Exception:
+            chat = client.chat.completions.create(
+                model="openai/gpt-oss-20b",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0,
+                seed=42,
+            )
         raw = chat.choices[0].message.content.strip()
 
     elif provider == "ollama":

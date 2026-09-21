@@ -70,12 +70,21 @@ def _call_llm(prompt: str, provider: str, model: str) -> str:
     elif provider == "groq":
         from groq import Groq
         client = Groq(api_key=os.environ["GROQ_API_KEY"])
-        chat = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0,
-            seed=42,
-        )
+        groq_model = model or os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+        try:
+            chat = client.chat.completions.create(
+                model=groq_model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0,
+                seed=42,
+            )
+        except Exception:
+            chat = client.chat.completions.create(
+                model="openai/gpt-oss-20b",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0,
+                seed=42,
+            )
         return chat.choices[0].message.content.strip()
 
     elif provider == "gemini":
