@@ -15,6 +15,7 @@ ENV/
 .coverage
 htmlcov/
 .llm_cache/
+.chroma_store/
 
 # Environment variables & secrets
 .env

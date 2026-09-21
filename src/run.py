@@ -24,7 +24,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.load       import load_shipments, load_notes, load_notes_structured
+from src.load       import load_shipments, load_notes
 from src.metrics    import compute_weekly_cost, add_own_history_baseline, add_peer_baseline
 from src.flags      import flag_candidates, build_candidate_rows
 from src.notes      import load_structured_notes

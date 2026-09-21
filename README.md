@@ -8,6 +8,23 @@ A clean, reproducible Python pipeline that watches weekly freight costs across 7
 pip install -r requirements.txt
 python src/run.py --no-llm      # No LLM required; uses template reasons
 python -m pytest tests/ -v      # Run all unit + adversarial tests
+streamlit run dashboard.py      # Launch interactive dashboard
+```
+
+### Interactive Q&A
+```bash
+python ask.py "why did Chennai-Bangalore get pricier in March 2025?"
+python ask.py "which route had the biggest spike?"
+python ask.py "show me all unexplained anomalies"
+python ask.py "give me a summary"
+```
+
+### LLM Note Extraction (shows AI → validation pipeline)
+```bash
+python scripts/extract_notes_llm.py --dry-run          # no LLM needed
+python scripts/extract_notes_llm.py --compare          # vs hand-curated
+# With Gemini: set GEMINI_API_KEY in .env, LLM_PROVIDER=gemini
+python scripts/extract_notes_llm.py
 ```
 
 ## How It Works
@@ -28,9 +45,11 @@ shipment_records.csv
 [flags.py] → flag when cost > OWN_THRESHOLD OR PEER_THRESHOLD
        │
        ▼  (candidates only)
-[retrieve.py] → get top-k relevant notes by semantic/TF-IDF similarity
-       │
-       ▼
+[retrieve.py] → ChromaDB vector database (all-MiniLM-L6-v2 embeddings)
+               → fallback: sentence-transformers in-memory
+               → fallback: TF-IDF cosine similarity
+        │
+        ▼
 [validate.py] → CODE decides: note must (a) apply to route, (b) cover week, (c) direction=increase
        │
        ├── "No (justified)" → [explain.py] LLM writes reason based only on validated note
@@ -86,6 +105,28 @@ Sensitivity analysis (see `phase1_analysis.py` output) shows 20 candidates at (1
 3. **Guardrails** (`guardrails.py`) assert these conditions again on every justified row in the output. Any violation raises `AssertionError` and fails the pipeline loudly.
 4. **LLM scope**: the LLM only writes the prose `reason` string. It cannot change `flagged` or `matched_note_id`. Verdicts are identical whether `LLM_PROVIDER=none` or a real LLM is used.
 
+### LLM Note Extraction (AI → Validation Pipeline)
+
+`scripts/extract_notes_llm.py` demonstrates meaningful LLM use:
+- LLM reads raw `context_notes.csv` and extracts structured fields (routes, dates, direction)
+- Output is validated through the same 3-condition logic before any verdict is made
+- Side-by-side diff with hand-curated notes shows where LLM agrees/disagrees
+- Falls back to deterministic heuristics with `--dry-run` if no LLM configured
+
+### Vector Database (ChromaDB)
+
+Retrieval uses ChromaDB as the primary backend (brief explicitly recommends this):
+- **all-MiniLM-L6-v2** embeddings via sentence-transformers
+- Persistent collection stored in `.chroma_store/`
+- Cosine similarity scoring (visible in `verbose=True` mode)
+- Automatic fallback to sentence-transformers in-memory, then TF-IDF
+
+### Acknowledged Discrepancy: Mumbai-Pune 2025-09-15
+
+The sample output marks this week as `Yes` (unexplained). My output marks it `No (justified)` with N003.
+
+My reasoning: N003 (diesel price rise, 2025-05-05) has **no end date** — it is open-ended. Under the natural interpretation, open-ended notes apply indefinitely. My system applies N003 consistently to all 13 Mumbai-Pune flagged weeks after May 2025. See `WALKTHROUGH.md` §8 for the full defence.
+
 ## Reproducibility Check
 
 ```powershell
@@ -110,10 +151,10 @@ See `token_log.md` for full details.
 ## Known Limitations
 
 1. **Small peer groups**: 1 peer each for Long and Short routes. Peer comparison is noisy.
-2. **N003 open-ended**: Diesel price rise has no stated end date; assumed to continue through dataset end. This may over-justify future Mumbai-Pune spikes.
+2. **N003 open-ended**: Diesel price rise has no stated end date; assumed to continue through dataset end. My system justifies all Mumbai-Pune spikes from May 2025 onward with N003. The sample output disagrees for 2025-09-15; see WALKTHROUGH §8 for full reasoning.
 3. **N002 single-week window**: Festival week assumed to be exactly 1 week (Jan 20–26). If the festival lasted longer, some rows may be under-justified.
-4. **Distance variation**: The same route shows slightly different `distance_km` values across shipments. This is handled correctly by the ratio-of-sums formula but means cost_per_tonne_km can vary for reasons other than price.
-5. **TF-IDF fallback**: If `sentence-transformers` is not installed, retrieval falls back to TF-IDF. This may retrieve slightly different notes but validation (the code layer) is unaffected.
+4. **Distance variation**: The same route shows slightly different `distance_km` values across shipments. Handled correctly by ratio-of-sums but worth noting.
+5. **Eval labels are self-created**: `eval/labels.csv` was hand-labeled by me. Precision=Recall=1.0 demonstrates the harness infrastructure works, not independently verified ground truth.
 
 ## Project Structure
 
@@ -124,26 +165,32 @@ src/
   metrics.py     — Weekly cost, own-history, peer baselines
   flags.py       — Candidate flagging (OR rule) and formatting
   notes.py       — Structured notes loading and predicates
-  retrieve.py    — Semantic/TF-IDF retrieval of candidate notes
+  retrieve.py    — ChromaDB vector DB + sentence-transformers + TF-IDF retrieval
   validate.py    — Code-based verdict (route, window, direction)
   explain.py     — LLM reason (justified) or template (unexplained)
   guardrails.py  — Hard assertions on every justified row
   run.py         — One-command pipeline runner
+scripts/
+  extract_notes_llm.py  — Auto-extract structured notes via LLM
+  phase0_inspect.py     — Data profiling (development)
+  phase1_analysis.py    — Threshold analysis (development)
+  verify_notes.py       — Notes verification utility
 tests/
   test_metrics.py  — Phase 1 unit tests (12 tests)
   test_validate.py — Phase 3 adversarial tests (8 tests)
 eval/
   eval.py        — Precision/recall evaluation
-  labels.csv     — Hand-labelled rows (UNVERIFIED)
+  labels.csv     — Hand-labelled rows (self-created; see Known Limitations)
 data/
   shipment_records.csv
   context_notes.csv
   notes_structured.csv  — UNVERIFIED, requires hand review
   sample_output_format_v2.csv
+dashboard.py     — Streamlit dashboard (streamlit run dashboard.py)
 output.csv       — Final pipeline output
-ask.py           — Stretch: CLI for cost queries
+ask.py           — NL Q&A CLI (LLM-based intent parsing, 5 question types)
 token_log.md     — LLM usage and cost
-WALKTHROUGH.md   — 10-minute talking points
+WALKTHROUGH.md  — 10-minute talking points
 requirements.txt
 .env.example
 ```

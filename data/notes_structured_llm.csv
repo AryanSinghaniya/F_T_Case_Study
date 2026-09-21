@@ -1,0 +1,11 @@
+note_id,routes,start_date,end_date,direction,evidence_phrase
+N001,Chennai-Bangalore,2025-02-24,2025-03-08,increase,Heavy flooding on the Chennai-Bangalore highway disrupted normal truck movement 
+N002,Mumbai-Pune,2025-01-20,,increase,A regional festival week saw a temporary surcharge applied by transporters on th
+N003,ALL,2025-05-05,,increase,"Diesel prices rose nationwide starting this week, pushing up transportation cost"
+N004,ALL,2024-03-11,,not_applicable,"A new toll plaza was commissioned on a national highway stretch, but the affecte"
+N005,Mumbai-Pune,2024-07-29,,none,Scheduled highway maintenance work between Mumbai and Delhi caused minor delays 
+N006,ALL,2025-09-22,,none,A logistics industry report noted overall demand for freight capacity remained s
+N007,Delhi-Jaipur,2024-05-20,,decrease,Local authorities announced improved road conditions on the Delhi-Jaipur stretch
+N008,Kolkata-Bhubaneswar,2025-06-09,,none,No significant disruptions were reported on the Kolkata-Bhubaneswar corridor thi
+N009,Chennai-Bangalore,2025-03-17,,decrease,Highway authorities confirmed the Chennai-Bangalore route returned to normal con
+N010,ALL,2025-10-27,,none,A new vehicle tracking mandate was introduced for commercial fleets; compliance 

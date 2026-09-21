@@ -5,11 +5,15 @@ scikit-learn>=1.4.0
 python-dotenv>=1.0.0
 requests>=2.31.0
 
-# Optional: sentence-transformers for semantic retrieval
-# sentence-transformers>=2.7.0
+# Semantic retrieval (ChromaDB vector database + embeddings)
+chromadb>=0.4.0
+sentence-transformers>=2.7.0
 
-# Optional: Groq client
+# Streamlit dashboard
+streamlit>=1.32.0
+
+# Optional: Groq client (free tier LLM)
 # groq>=0.5.0
 
-# Optional: Google Gemini client
+# Optional: Google Gemini client (free tier LLM)
 # google-generativeai>=0.5.0

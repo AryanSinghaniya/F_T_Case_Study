@@ -54,15 +54,3 @@ def load_notes(path: Path = NOTES_CSV) -> pd.DataFrame:
     return df
 
 
-def load_notes_structured(path: Path = NOTES_STRUCTURED) -> pd.DataFrame:
-    """
-    Load the hand-verified structured notes file.
-
-    Expected columns: note_id, routes, start_date, end_date,
-                      direction, evidence_phrase
-    """
-    df = pd.read_csv(path)
-    df["start_date"] = pd.to_datetime(df["start_date"])
-    # end_date may be blank (open-ended); coerce safely
-    df["end_date"] = pd.to_datetime(df["end_date"], errors="coerce")
-    return df
