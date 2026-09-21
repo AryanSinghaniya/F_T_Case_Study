@@ -102,7 +102,7 @@ def _parse_intent_llm(question: str, provider: str) -> dict:
         from groq import Groq
         client = Groq(api_key=os.environ["GROQ_API_KEY"])
         chat = client.chat.completions.create(
-            model=os.environ.get("GROQ_MODEL", "llama3-8b-8192"),
+            model=os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile"),
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
             seed=42,
@@ -373,6 +373,9 @@ def answer(question: str) -> str:
 
 
 if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
     if len(sys.argv) < 2:
         print("Usage: python ask.py \"your question here\"")
         print("\nExamples:")

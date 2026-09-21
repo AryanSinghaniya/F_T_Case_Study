@@ -1,0 +1,351 @@
+================================================================================
+         FREIGHTIGER ASSIGNMENT — POORA PROJECT HINGLISH MEIN SAMJHA
+================================================================================
+
+Aryan Singhaniya ka 24-Hour Case Study: "Smart Shipping Cost Watcher"
+GitHub: https://github.com/AryanSinghaniya/F_T_Case_Study
+
+================================================================================
+1. YE PROJECT HAI KYA?
+================================================================================
+
+India mein freight (trucking) ka kaam bahut bada hai. Har hafte hazaron trucks
+7 alag-alag routes pe maal dhote hain — Mumbai se Pune, Delhi se Jaipur, etc.
+
+Problem yeh hai ki in trucks ki cost (freight cost) kabhi kabhi ACHANAK bahut
+zyada ho jaati hai. Kabhi flooding se, kabhi festival se, kabhi diesel prices
+se. Ye samajhna mushkil hota hai ki:
+
+  - Cost spike natural reason se tha? (flood, festival)
+  - Ya koi galat kaam ho raha hai? (overcharging)
+
+IS PROJECT KA KAAM:
+  Har hafte har route ka cost automatically check karo.
+  Agar cost zyada hai, toh explain karo kyun — notes ke basis par.
+  Agar koi reason nahi mila, toh flag karo human review ke liye.
+
+OUTPUT mein milta hai:
+  "Delhi-Jaipur, Nov 2024 mein +35% cost spike — KOI REASON NAHI MILA ⚠️"
+  "Ahmedabad-Mumbai, Jan 2025 mein +29% cost spike — Festival surcharge ✅"
+
+
+================================================================================
+2. DATA KYA HAI?
+================================================================================
+
+Teen CSV files di gayi thi:
+
+  A) shipment_records.csv
+     - 2,940 shipments ka record
+     - 7 routes: Mumbai-Pune, Delhi-Jaipur, Ahmedabad-Mumbai,
+                 Chennai-Bangalore, Mumbai-Delhi, Kolkata-Bhubaneswar, Delhi-Mumbai
+     - 2 saal ka data: January 2024 se December 2025 tak
+     - Har shipment mein: route, material, weight, distance, cost, date, transporter
+
+  B) context_notes.csv
+     - 10 notes — real events jo cost affect kar sakte hain
+     - Example: "Chennai-Bangalore par Feb-Mar 2025 mein flooding thi"
+     - Example: "Ahmedabad-Mumbai par Jan 2025 mein festival surcharge laga"
+     - Example: "Diesel prices May 2025 se badh gayi sab routes par"
+
+  C) sample_output_format.csv
+     - Bata raha hai output kaisa hona chahiye (column contract)
+
+
+================================================================================
+3. KONSI TECHNOLOGY USE KI AUR KYU?
+================================================================================
+
+--- A) PYTHON (Core Language) ---
+KYU: Data science ke liye best language. Fast, readable, aur sab libraries
+     freely available hain.
+
+--- B) PANDAS (Data Processing) ---
+KYU: CSV data load karna, grouping, aggregation — sab pandas se hota hai.
+     2940 rows ko hafte-ke-hisaab se group karna, average nikalna — ye sab
+     pandas mein 2-3 lines mein ho jaata hai.
+
+KAISE USE KIA:
+  - Har route ka har hafte ka "cost per tonne-km" nikala
+  - Formula: SUM(total cost) ÷ SUM(weight × distance)
+  - Har route ka "past 8 weeks ka average" nikala (no future data leak!)
+  - Doosre similar routes se compare kiya (peer baseline)
+
+--- C) SCIKIT-LEARN (TF-IDF Fallback) ---
+KYU: Jab notes retrieve karne hote hain, toh text similarity ke liye use kiya.
+     Ye ek "backup" retriever hai agar ChromaDB nahi chale.
+
+--- D) CHROMADB (Vector Database) --- ⭐ MAIN AI FEATURE
+KYU: Brief mein explicitly likha tha "use a vector database".
+     ChromaDB ek vector store hai — text ko numbers (embeddings) mein convert
+     karta hai, phir similarity se dhundta hai.
+
+KAISE KAAM KARTA HAI:
+  1. Har note (e.g., "flooding on Chennai-Bangalore") ko 384-dimensional
+     vector mein convert kiya using all-MiniLM-L6-v2 model.
+  2. Jab koi route flag hota hai (e.g., Chennai-Bangalore, March 2025),
+     uska query vector banate hain.
+  3. ChromaDB dhundta hai: "Kaunsa note is query se sabse zyada similar hai?"
+  4. Top-k notes return karte hain for validation.
+
+--- E) SENTENCE-TRANSFORMERS (AI Embeddings) ---
+KYU: "all-MiniLM-L6-v2" model use kiya — ye ek pre-trained AI model hai jo
+     text ko vectors mein convert karta hai.
+     Isse "semantic search" hota hai — exact words match nahi hone chahiye,
+     MEANING match honi chahiye.
+
+EXAMPLE:
+  Query: "Chennai-Bangalore route mein March 2025 cost badha"
+  Note:  "Heavy flooding on Chennai-Bangalore highway disrupted truck movement"
+  Match: HIGH — flood = cost increase on same route!
+
+--- F) VALIDATION LAYER (Custom Code) --- ⭐ SABSE IMPORTANT
+KYU: AI ka dhundha hua note blindly trust nahi kar sakte. Isliye CODE se
+     3 conditions check karte hain:
+  1. Note us ROUTE pe apply hota hai? (Chennai-Bangalore = Chennai-Bangalore ✓)
+  2. Note us WEEK ko cover karta hai? (week of Feb 24 = Feb 24 to Mar 8 ✓)
+  3. Note "increase" direction mein hai? (flooding = increase ✓)
+  Teeno haan → "No (justified)" verdict
+  Koi bhi nahi → "Yes" (unexplained, human review chahiye)
+
+--- G) GUARDRAILS (Custom Code) ---
+KYU: Pipeline ke end mein ek aur check — agar koi justified row galat verdict
+     deta hai toh pipeline CRASH kar deta hai (silently wrong nahi deta).
+     Ye interviewer ko show karne ke liye best thing hai!
+
+--- H) STREAMLIT (Dashboard / UI) ---
+KYU: Python se seedha web app banana aur free mein deploy karna.
+     Ek .py file likhi — automatically browser mein UI ban gaya.
+     Streamlit Cloud par free deploy bhi ho gaya.
+
+--- I) PYTEST (Testing) ---
+KYU: 20 automated tests likhay — unit tests aur adversarial tests.
+     Adversarial = "galat route de, wrong date de — phir bhi sahi verdict aana chahiye"
+
+--- J) GIT + GITHUB (Version Control) ---
+KYU: Code ka history rakha, aur public repo se Streamlit Cloud deploy kiya.
+
+
+================================================================================
+4. PIPELINE KAISA KAAM KARTA HAI? (Step by Step)
+================================================================================
+
+STEP 1 — DATA LOAD
+  shipment_records.csv load karo
+  Dates parse karo, routes banao (Mumbai-Pune), weeks calculate karo (Monday)
+
+STEP 2 — WEEKLY METRICS
+  Har route + har hafte ke liye ek row:
+  cost_per_tonne_km = Total Cost / (Total Weight × Total Distance)
+
+STEP 3 — BASELINES
+  A) OWN HISTORY: Pichle 8 hafte ka average (sirf purana data, koi future leak nahi)
+  B) PEER: Is hafte doosre similar routes ka average (e.g., doosra Medium-type route)
+
+STEP 4 — FLAGGING
+  Agar cost > own average +15% OR peer average +20% → CANDIDATE hai
+  Result: 728 weeks check kiye, 20 candidates mile
+
+STEP 5 — RETRIEVAL (ChromaDB)
+  Har candidate ke liye: "Kaunsa note relevant hai?"
+  ChromaDB query karo → top-k notes return karo (similarity score ke saath)
+
+STEP 6 — VALIDATION (Code, not AI!)
+  Har note ke liye 3 conditions check karo
+  Agar pass → "No (justified)", note ID save karo
+  Agar fail → "Yes" (unexplained)
+
+STEP 7 — EXPLANATION
+  Justified rows: LLM se ek sentence likhwao (ya template use karo)
+  Unexplained rows: Deterministic template — "No reason found, review needed"
+
+STEP 8 — GUARDRAILS
+  Final check: Har justified row ko dobara validate karo
+  Koi galti → Pipeline crash (loudly, silently nahi)
+
+STEP 9 — OUTPUT
+  output.csv likho — 20 rows, 8 columns
+
+RESULT:
+  No (justified): 16 rows (N003 diesel, N001 flood, N002 festival)
+  Yes (unexplained): 4 rows (Delhi-Jaipur Nov 2024, Chennai-Bangalore Mar 2025)
+
+
+================================================================================
+5. DASHBOARD (UI) MEIN KYA KYA DIKHTA HAI?
+================================================================================
+
+URL: http://localhost:8501 (local) ya Streamlit Cloud par live
+
+--- TOP SECTION: KPI CARDS (4 boxes) ---
+  📦 Total Flagged Weeks: 20
+  ⚠️  Unexplained (still a mystery): 4
+  ✅ Justified (explained by notes): 16
+  🛣️  Routes Monitored: 7
+
+--- SIDEBAR (Left) ---
+  Route Selector: Dropdown — "All Routes" ya koi specific route choose karo
+  Verdict Filter: "Yes" ya "No (justified)" — filter lagao
+
+--- MAIN SECTION 1: ROUTE COST TIMELINE ---
+  Line Chart ya Bar Chart (tabs hain dono)
+  X-axis: Weeks (Jan 2024 to Dec 2025)
+  Y-axis: Cost per tonne-km (INR)
+  Flagged weeks ke neeche ek table dikhi — week, cost, verdict
+
+--- MAIN SECTION 2: FLAGGED ROWS TABLE ---
+  Har flagged week ka detail:
+  🔴 RED background = Unexplained (Yes) — ye problem hai!
+  🟢 GREEN background = Justified (No justified) — reason mila
+  Columns: Route | Week | Cost | vs Own Avg | vs Peer | Verdict | Note ID | Reason
+
+--- MAIN SECTION 3: AVERAGE COST BAR CHART ---
+  Har route ka average flagged cost — easily compare karo
+  Konsa route sabse zyada expensive tha?
+
+--- MAIN SECTION 4: CONTEXT NOTES EXPLORER ---
+  Expandable cards — click karo aur full note padho
+  Har note mein: Note ID, Date, Route, Full Text
+
+--- FOOTER ---
+  Pipeline architecture aur commands ka quick reference
+
+
+================================================================================
+6. ask.py — NATURAL LANGUAGE Q&A TOOL
+================================================================================
+
+python ask.py "which route had the biggest spike?"
+  → "🚨 Delhi-Jaipur, Nov 2024 — +35.5%"
+
+python ask.py "show me all unexplained anomalies"
+  → Char rows list karega with full details
+
+python ask.py "what happened with costs from Ahmedabad in January 2025?"
+  → "✅ Festival surcharge tha (N002)"
+
+python ask.py "give me a summary"
+  → "Total: 20 | Justified: 16 | Unexplained: 4"
+
+Kaise kaam karta hai:
+  - Pehle LLM se "intent" samjhata hai (agar LLM set hai)
+  - Nahi toh regex se route/date nikalta hai
+  - output.csv se answer dhundta hai
+  - 5 question types support karta hai
+
+
+================================================================================
+7. SPECIAL NOTES (INTERVIEW MEIN KAM AANE WALI BAATEIN)
+================================================================================
+
+Q: Mumbai-Pune 2025-09-15 sample output se alag kyun hai?
+A: Sample output mein "Yes" (unexplained) hai. Mere output mein "No (justified)"
+   hai. Reason: N003 (diesel price rise, May 2025) mein koi end date nahi hai —
+   matlab open-ended. Isliye May 2025 ke baad sab Mumbai-Pune weeks cover hote
+   hain. Ye logic consistent hai aur defensible hai.
+
+Q: LLM kya karta hai is project mein?
+A: Sirf ek kaam — plain English reason likhta hai. Verdict (Yes/No) KABHI
+   NAHI deta. Verdict 100% code decide karta hai. Agar LLM nahi hai, toh
+   template use hota hai — aur output SAME rehta hai!
+
+Q: Eval score 100% hai — ye fake hai kya?
+A: Labels maine khud banaye hain. Ye 100% score expected hai kyunki main
+   apne hi labels ke against test kar raha hoon. Ye eval "infrastructure" test
+   karta hai — kya pipeline sahi column format mein output deta hai? Production
+   mein independent labels chahiye honge.
+
+Q: Reproducibility kaise prove ki?
+A: repro_check.ps1 chalao — pipeline 3 baar chalata hai, teeno outputs
+   byte-identical hain. Reason: LLM nahi use kiya (LLM_PROVIDER=none), aur
+   pandas operations deterministic hain same data par.
+
+
+================================================================================
+8. PROJECT STRUCTURE (QUICK REFERENCE)
+================================================================================
+
+frighter_tiger_assignment/
+│
+├── src/                    ← Core pipeline code
+│   ├── load.py             ← Data loading
+│   ├── metrics.py          ← Cost calculation
+│   ├── flags.py            ← Anomaly detection
+│   ├── retrieve.py         ← ChromaDB vector search
+│   ├── validate.py         ← 3-condition verdict
+│   ├── explain.py          ← LLM / template reasons
+│   ├── guardrails.py       ← Final safety checks
+│   └── run.py              ← Ek command mein sab chalao
+│
+├── scripts/                ← Development / utility scripts
+│   ├── extract_notes_llm.py ← LLM se notes auto-extract karo
+│   ├── phase0_inspect.py   ← Data profiling
+│   └── phase1_analysis.py  ← Threshold analysis
+│
+├── tests/                  ← 20 automated tests
+│   ├── test_metrics.py     ← 12 unit tests
+│   └── test_validate.py    ← 8 adversarial tests
+│
+├── eval/                   ← Evaluation
+│   ├── labels.csv          ← Ground truth (self-labeled)
+│   └── eval.py             ← Precision/Recall calculator
+│
+├── data/                   ← Input data
+│   ├── shipment_records.csv
+│   ├── context_notes.csv
+│   └── notes_structured.csv  ← UNVERIFIED — human review needed
+│
+├── dashboard.py            ← Streamlit UI
+├── ask.py                  ← Natural language Q&A
+├── output.csv              ← Final output (20 rows)
+├── demo.py                 ← Interviewer demo script
+├── README.md               ← Full documentation
+├── WALKTHROUGH.md          ← 10-minute interview guide
+├── token_log.md            ← LLM usage & cost ($0.00)
+└── requirements.txt        ← Python dependencies
+
+
+================================================================================
+9. COMMANDS CHEAT SHEET
+================================================================================
+
+Pipeline chalao:
+  python src/run.py --no-llm
+
+Tests chalao:
+  pytest -v
+
+Dashboard kholo:
+  python -m streamlit run dashboard.py
+
+Questions poochho:
+  python ask.py "which route had the biggest spike?"
+  python ask.py "show me all unexplained anomalies"
+  python ask.py "give me a summary"
+
+LLM note extraction:
+  python scripts/extract_notes_llm.py --dry-run --compare
+
+Interviewer demo:
+  python demo.py
+
+Reproducibility check:
+  .\\repro_check.ps1
+
+
+================================================================================
+10. COST AUR PERFORMANCE
+================================================================================
+
+LLM Calls (default mode):   0 (LLM_PROVIDER=none)
+Total Cost:                  $0.00
+Pipeline Runtime:            ~30 seconds (first run — ChromaDB download)
+                             ~5 seconds (subsequent runs — cached)
+Tests:                       20/20 PASS in 0.54 seconds
+Output rows:                 20 (from 728 total route-weeks)
+Justified:                   16 (80%)
+Unexplained:                 4 (20%)
+
+================================================================================
+                    Made by Aryan Singhaniya | FreightTiger Case Study
+================================================================================

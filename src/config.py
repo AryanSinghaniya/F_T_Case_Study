@@ -22,8 +22,11 @@ HISTORY_WEEKS: int = 8  # trailing weeks strictly before the current week
 # Paths
 # ---------------------------------------------------------------------------
 from pathlib import Path
+from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(PROJECT_ROOT / ".env", override=False)
+
 DATA_DIR     = PROJECT_ROOT / "data"
 OUTPUT_PATH  = PROJECT_ROOT / "output.csv"
 

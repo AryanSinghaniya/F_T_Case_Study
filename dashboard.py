@@ -99,6 +99,21 @@ verdict_filter = st.sidebar.multiselect(
     default=["Yes", "No (justified)"],
 )
 
+st.sidebar.divider()
+st.sidebar.header("🤖 LLM Settings (Groq)")
+groq_key_input = st.sidebar.text_input(
+    "Groq API Key",
+    value=os.environ.get("GROQ_API_KEY", ""),
+    type="password",
+    help="Get a free fast API key from https://console.groq.com/keys",
+)
+if groq_key_input and not groq_key_input.startswith("your_"):
+    os.environ["GROQ_API_KEY"] = groq_key_input
+    os.environ["LLM_PROVIDER"] = "groq"
+    os.environ["GROQ_MODEL"] = "llama-3.3-70b-versatile"
+    st.sidebar.success("⚡ Groq Active (llama-3.3-70b)")
+
+
 # ── KPI Cards ─────────────────────────────────────────────────────────────────
 total      = len(output_df)
 yes_count  = (output_df["flagged"] == "Yes").sum()
@@ -218,13 +233,51 @@ else:
 
 st.divider()
 
+# ── Natural Language Q&A (Groq / RAG) ─────────────────────────────────────────
+st.subheader("💬 Ask Freight AI Assistant (Natural Language Q&A)")
+st.caption("Ask questions about anomalies, root causes, or route spikes in plain English.")
+
+user_q = st.text_input(
+    "Ask a question:",
+    placeholder="e.g., Which route had the biggest spike? OR Why did Chennai-Bangalore cost more in March 2025?",
+    key="user_query_input",
+)
+
+quick_cols = st.columns(4)
+btn_biggest = quick_cols[0].button("🚨 Biggest Spike", use_container_width=True)
+btn_unexp   = quick_cols[1].button("⚠️ Unexplained", use_container_width=True)
+btn_just    = quick_cols[2].button("✅ Justified Spikes", use_container_width=True)
+btn_summary = quick_cols[3].button("📈 Overall Summary", use_container_width=True)
+
+query_to_run = user_q
+if btn_biggest:
+    query_to_run = "which route had the biggest spike?"
+elif btn_unexp:
+    query_to_run = "show me all unexplained anomalies"
+elif btn_just:
+    query_to_run = "show me all justified cost spikes"
+elif btn_summary:
+    query_to_run = "give me a summary"
+
+if query_to_run:
+    with st.spinner("Analyzing shipping data and context notes..."):
+        try:
+            import ask
+            ans = ask.answer(query_to_run)
+            st.success("Analysis Result:")
+            st.markdown(ans)
+        except Exception as err:
+            st.error(f"Error querying assistant: {err}")
+
+st.divider()
+
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown(
     """
     ---
     **FreightTiger Assignment** — Smart Shipping Cost Watcher  
-    Pipeline: `load → metrics → flag → retrieve (ChromaDB) → validate → explain (LLM) → guardrails`  
-    Run: `python src/run.py --no-llm` | Tests: `pytest -v` | Ask: `python ask.py "your question"`
+    Pipeline: `load → metrics → flag → retrieve (ChromaDB) → validate → explain (Groq LLM) → guardrails`  
+    Run: `python src/run.py` | Tests: `pytest -v` | Ask: `python ask.py "your question"`
     """,
     unsafe_allow_html=False,
 )

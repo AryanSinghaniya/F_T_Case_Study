@@ -95,7 +95,7 @@ def call_llm(prompt: str, provider: str) -> str:
         from groq import Groq
         client = Groq(api_key=os.environ["GROQ_API_KEY"])
         chat = client.chat.completions.create(
-            model=os.environ.get("GROQ_MODEL", "llama3-8b-8192"),
+            model=os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile"),
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
             seed=42,

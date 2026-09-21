@@ -184,7 +184,7 @@ def generate_reasons(
     provider = os.environ.get("LLM_PROVIDER", "none").lower()
     model    = os.environ.get("OLLAMA_MODEL", "llama3.2")
     if provider == "groq":
-        model = os.environ.get("GROQ_MODEL", "llama3-8b-8192")
+        model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
     elif provider == "gemini":
         model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
 
