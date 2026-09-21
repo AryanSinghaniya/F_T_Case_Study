@@ -1,16 +1,25 @@
 """
 dashboard.py — Streamlit dashboard for the Freight Cost Watcher.
 
-Launch:
-    streamlit run dashboard.py
+Launch locally:
+    python -m streamlit run dashboard.py
 
-Deploy free:
-    streamlit.io/cloud  (connect GitHub repo, set main file = dashboard.py)
+Deploy free on Streamlit Cloud:
+    1. Push repo to GitHub (already done)
+    2. Go to share.streamlit.io
+    3. Connect GitHub → select repo AryanSinghaniya/F_T_Case_Study
+    4. Branch: main, Main file: dashboard.py
+    5. Click Deploy!
 """
 import streamlit as st
 import pandas as pd
 import numpy as np
+import sys
 from pathlib import Path
+
+# ── Base directory (works locally and on Streamlit Cloud) ─────────────────────
+BASE_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(BASE_DIR))
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -23,7 +32,7 @@ st.set_page_config(
 # ── Data loading ──────────────────────────────────────────────────────────────
 @st.cache_data
 def load_output() -> pd.DataFrame:
-    path = Path("output.csv")
+    path = BASE_DIR / "output.csv"
     if not path.exists():
         return pd.DataFrame()
     df = pd.read_csv(path)
@@ -35,8 +44,6 @@ def load_output() -> pd.DataFrame:
 def load_weekly_all() -> pd.DataFrame:
     """Load all weekly data (not just flagged) for sparklines."""
     try:
-        import sys
-        sys.path.insert(0, str(Path(__file__).resolve().parent))
         from src.load    import load_shipments
         from src.metrics import compute_weekly_cost, add_own_history_baseline, add_peer_baseline
         from src.flags   import flag_candidates
@@ -54,7 +61,7 @@ def load_weekly_all() -> pd.DataFrame:
 @st.cache_data
 def load_notes_data() -> pd.DataFrame:
     try:
-        return pd.read_csv(Path("data") / "context_notes.csv")
+        return pd.read_csv(BASE_DIR / "data" / "context_notes.csv")
     except Exception:
         return pd.DataFrame()
 
