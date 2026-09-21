@@ -11,15 +11,18 @@ Deploy free on Streamlit Cloud:
     4. Branch: main, Main file: dashboard.py
     5. Click Deploy!
 """
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
 
 # ── Base directory (works locally and on Streamlit Cloud) ─────────────────────
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
+load_dotenv(BASE_DIR / ".env", override=False)
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
