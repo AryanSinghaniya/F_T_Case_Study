@@ -102,19 +102,22 @@ verdict_filter = st.sidebar.multiselect(
     default=["Yes", "No (justified)"],
 )
 
-st.sidebar.divider()
-st.sidebar.header("🤖 LLM Settings (Groq)")
-groq_key_input = st.sidebar.text_input(
-    "Groq API Key",
-    value=os.environ.get("GROQ_API_KEY", ""),
-    type="password",
-    help="Get a free fast API key from https://console.groq.com/keys",
-)
-if groq_key_input and not groq_key_input.startswith("your_"):
-    os.environ["GROQ_API_KEY"] = groq_key_input
+# ── Auto-configure Groq AI (Reads from Streamlit Secrets or .env) ──────────────
+if hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
+    os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+
+if not os.environ.get("LLM_PROVIDER"):
     os.environ["LLM_PROVIDER"] = "groq"
-    os.environ["GROQ_MODEL"] = "llama-3.3-70b-versatile"
-    st.sidebar.success("⚡ Groq Active (llama-3.3-70b)")
+if not os.environ.get("GROQ_MODEL"):
+    os.environ["GROQ_MODEL"] = "openai/gpt-oss-120b"
+
+st.sidebar.divider()
+st.sidebar.markdown("### 🤖 Freight AI Assistant")
+if os.environ.get("GROQ_API_KEY") and not os.environ.get("GROQ_API_KEY", "").startswith("your_"):
+    st.sidebar.success("⚡ **Status:** Active & Ready")
+    st.sidebar.caption("Powered by Groq LLM (High-speed inference)")
+else:
+    st.sidebar.info("💡 **Mode:** Built-in RAG Search")
 
 
 # ── KPI Cards ─────────────────────────────────────────────────────────────────

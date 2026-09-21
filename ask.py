@@ -295,9 +295,14 @@ def answer(question: str) -> str:
     Uses LLM for intent parsing when available, regex fallback otherwise.
     """
     from dotenv import load_dotenv
-    load_dotenv()
+    load_dotenv(Path(__file__).resolve().parent / ".env", override=False)
 
-    provider = os.environ.get("LLM_PROVIDER", "none").lower()
+    if not os.environ.get("LLM_PROVIDER"):
+        os.environ["LLM_PROVIDER"] = "groq"
+    if not os.environ.get("GROQ_MODEL"):
+        os.environ["GROQ_MODEL"] = "openai/gpt-oss-120b"
+
+    provider = os.environ.get("LLM_PROVIDER", "groq").lower()
 
     # Extract intent
     if provider not in ("none", ""):
