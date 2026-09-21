@@ -1,0 +1,21 @@
+route,week_of,expected_verdict,expected_note_id,notes
+Ahmedabad-Mumbai,2025-01-20,No (justified),N002,Festival surcharge note clearly applies
+Chennai-Bangalore,2025-02-24,No (justified),N001,Flooding note applies and window covers week
+Chennai-Bangalore,2025-03-03,No (justified),N001,Still in flooding window (Mar 3 <= Mar 8)
+Chennai-Bangalore,2025-03-10,Yes,,N001 window ends Mar 8; this week is just after
+Chennai-Bangalore,2025-03-17,Yes,,Returned to normal (N009) - no cost increase note
+Delhi-Jaipur,2024-11-11,Yes,,No note covers this route/date
+Delhi-Jaipur,2024-11-18,Yes,,No note covers this route/date
+Mumbai-Pune,2025-06-23,No (justified),N003,Diesel price rise covers this week (open-ended from May 5)
+Mumbai-Pune,2025-09-15,No (justified),N003,Diesel price rise still open-ended; note N006 near-miss but not increase
+Mumbai-Pune,2025-10-06,No (justified),N003,Diesel price rise still open-ended
+Mumbai-Pune,2025-10-20,No (justified),N003,Diesel price rise still open-ended
+Mumbai-Pune,2025-10-27,No (justified),N003,Diesel price rise still open-ended
+Mumbai-Pune,2025-11-03,No (justified),N003,Diesel price rise still open-ended
+Mumbai-Pune,2025-11-10,No (justified),N003,Diesel price rise still open-ended
+Mumbai-Pune,2025-11-17,No (justified),N003,Diesel price rise still open-ended
+Mumbai-Pune,2025-11-24,No (justified),N003,Diesel price rise still open-ended
+Mumbai-Pune,2025-12-01,No (justified),N003,Diesel price rise still open-ended
+Mumbai-Pune,2025-12-08,No (justified),N003,Diesel price rise still open-ended
+Mumbai-Pune,2025-12-15,No (justified),N003,Diesel price rise still open-ended
+Mumbai-Pune,2025-12-22,No (justified),N003,Diesel price rise still open-ended

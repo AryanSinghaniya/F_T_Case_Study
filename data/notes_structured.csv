@@ -1,0 +1,11 @@
+note_id,routes,start_date,end_date,direction,evidence_phrase
+N001,Chennai-Bangalore,2025-02-24,2025-03-08,increase,"forcing longer detours and higher trip costs"
+N002,Ahmedabad-Mumbai,2025-01-20,2025-01-26,increase,"temporary surcharge applied by transporters due to high demand"
+N003,ALL,2025-05-05,,increase,"pushing up transportation costs across all routes by roughly 5-7%"
+N004,ALL,2024-03-11,2024-03-11,not_applicable,"affected routes are not part of this dataset"
+N005,Mumbai-Delhi,2024-07-29,2024-08-04,none,"costs were not significantly affected"
+N006,ALL,2025-09-22,2025-12-31,not_applicable,"overall demand for freight capacity remained stable"
+N007,Delhi-Jaipur,2024-05-20,2024-05-26,decrease,"improved road conditions after resurfacing work was completed"
+N008,Kolkata-Bhubaneswar,2025-06-09,2025-09-08,not_applicable,"freight movement remained normal"
+N009,Chennai-Bangalore,2025-03-17,2025-03-23,decrease,"route returned to normal conditions after flood-related repairs"
+N010,ALL,2025-10-27,2025-12-31,none,"compliance costs were absorbed by transporters without a rate change"
